@@ -1,0 +1,34 @@
+# 以下 secret 只供 demo，不得用於正式環境。
+name: order-invoice
+
+x-app-env: &app-env
+  MENU_CONFIG_URL: http://config-server:4000/menu.json
+  MENU_RUNTIME_URL: http://localhost:8090/assets/menu-runtime.js
+  AUTH_SECRET: demo-only-auth-secret-change-me-0123456789
+  REVALIDATE_TOKEN: demo-only-revalidate-token
+
+services:
+  order:
+    build:
+      context: .
+      dockerfile: apps/order/Dockerfile
+      args:
+        INVOICE_ZONE_URL: http://invoice:3001
+    ports: ["8080:3000"]
+    environment: *app-env
+    depends_on: [invoice, config-server]
+
+  invoice:
+    build:
+      context: .
+      dockerfile: apps/invoice/Dockerfile
+    expose: ["3001"]
+    environment: *app-env
+
+  config-server:
+    build:
+      context: .
+      dockerfile: services/config-server/Dockerfile
+    ports: ["8090:4000"]
+    # 掛整個資料夾而不是單一檔案：編輯器用「寫新檔再改名」存檔時，單檔掛載會失效
+    volumes: ["./deploy:/config:ro"]

@@ -1,0 +1,6 @@
+packages:
+  - apps/*
+  - packages/*
+  - services/*
+  - deploy
+  - e2e

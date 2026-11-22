@@ -1,0 +1,15 @@
+{
+  "name": "@repo/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test --grep-invert @measure",
+    "e2e:docker": "E2E_TARGET=docker E2E_BASE_URL=http://localhost:8080 playwright test --grep-invert @measure",
+    "measure": "E2E_TARGET=docker E2E_BASE_URL=http://localhost:8080 playwright test --grep @measure"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@repo/tsconfig": "workspace:*"
+  }
+}

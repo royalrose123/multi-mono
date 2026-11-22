@@ -1,0 +1,6 @@
+{
+  "name": "@repo/deploy",
+  "version": "0.0.0",
+  "private": true,
+  "description": "部署設定（menu.json 等）。不是任何 app 的依賴，改動不會觸發 app 重新部署。"
+}

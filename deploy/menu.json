@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "flags": { "menuV2": false },
+  "items": [
+    { "label": "首頁", "href": "/" },
+    { "label": "訂單", "href": "/orders" },
+    { "label": "發票", "href": "/invoices" }
+  ]
+}

@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@import "@repo/ui/theme.css";
+
+/* 讓共用套件裡用到的 class 也被產生（路徑相對於本檔案） */
+@source "../../../../packages";
+
+@theme {
+  --color-zone: #16a34a;
+}

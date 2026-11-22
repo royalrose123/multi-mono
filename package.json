@@ -1,0 +1,35 @@
+{
+  "name": "order-invoice",
+  "private": true,
+  "packageManager": "pnpm@10.34.9",
+  "engines": { "node": ">=20.9.0" },
+  "scripts": {
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "e2e": "pnpm --filter @repo/e2e run e2e",
+    "e2e:docker": "pnpm --filter @repo/e2e run e2e:docker",
+    "measure": "pnpm --filter @repo/e2e run measure",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:check": "node scripts/docker-check.mjs",
+    "deploy:affected": "node scripts/deploy-affected.mjs"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "20.19.43",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "jsdom": "29.1.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "turbo": "2.11.13",
+    "typescript": "5.9.3",
+    "vite": "8.3.8",
+    "vitest": "4.1.12"
+  }
+}
