@@ -173,7 +173,7 @@ footer { margin-top: 48px; font-size: .85rem; color: var(--muted); border-top: 1
     <li><a href="#choice">選型</a></li>
     <li><a href="#arch">架構圖</a></li>
     <li><a href="#impl">實作重點</a></li>
-    <li><a href="#menu">Build-time vs Runtime Menu</a></li>
+    <li><a href="#menu">Monorepo 共用元件 vs Web Component</a></li>
     <li><a href="#change">共用程式碼的變更流程</a></li>
     <li><a href="#deploy">部署</a></li>
     <li><a href="#limits">已知限制與風險</a></li>
@@ -529,11 +529,11 @@ export function safeNextPath(input: unknown): string {
 
 <!-- 5 -->
 <section id="menu">
-<h2>5. Build-time Menu vs Runtime Menu</h2>
-<div class="lead"><b>結論：</b>兩者的差別在「Menu 元件什麼時候合進頁面」。<b>Build-time</b>：Menu 是一般的 React 元件，app 直接 import，<code>next build</code> 時打包進每個 app。<b>Runtime</b>：Menu 另外打包成一個 JS 檔，頁面在瀏覽器執行時才下載並掛上去（這個 demo 用 Web Component 包裝）。</div>
-<p class="small">這個 demo 同時實作兩種，是為了對照；實際專案選其中一種即可。</p>
+<h2>5. Monorepo 共用元件 vs Web Component</h2>
+<div class="lead"><b>結論：</b>共用 Menu 有兩種做法。<b>Monorepo 共用元件</b>：Menu 是 monorepo 裡的共用套件 <code>@repo/menu</code>，order 和 invoice 直接 import，隨各自的 build 打包、部署。<b>Web Component</b>：Menu 包成 <code>&lt;runtime-site-menu&gt;</code>，用 Vite 打包成一個 JS 檔由 order 提供，頁面在瀏覽器載入後才掛上。</div>
+<p class="small">這個 demo 同時實作兩種是為了對照，實際專案選其中一種即可。程式碼與底部工具列中，前者稱為 build-time Menu、後者稱為 runtime Menu。</p>
 
-<h3>5.1 Build-time：當成一般元件 import</h3>
+<h3>5.1 Monorepo 共用元件</h3>
 <p>Menu 和頁面在同一棵 React tree 裡，layout 直接使用：</p>
 <pre><code>// layout.tsx
 &lt;header&gt;&lt;SiteMenu menu={menu} currentZone="order" user={user} /&gt;&lt;/header&gt;</code></pre>
@@ -551,7 +551,7 @@ export function safeNextPath(input: unknown): string {
   <li><b>部署</b>：Menu 元件打包在每個 app 裡，改了 Menu 元件，order 和 invoice 都要重新部署。</li>
 </ul>
 
-<h3>5.2 Runtime：執行時才載入</h3>
+<h3>5.2 Web Component</h3>
 <p>Menu 用 Vite 打包成一個獨立的 JS 檔（自帶一份 React），放在 order 的 <code>public/menu-runtime/</code>；app 的程式碼不 import 它。頁面上分成兩層：</p>
 <pre><code>layout
 └─ Host 元件（client component，Next 的 React）
@@ -568,15 +568,14 @@ export function safeNextPath(input: unknown): string {
   <li><b>目前頁面</b>：它不在 Next 的 React tree 裡，不能用 <code>usePathname()</code>，改用 Host 傳進來的路徑判斷。</li>
   <li><b>導頁</b>：不能用 <code>next/link</code>。連結是普通 <code>&lt;a&gt;</code>，點擊時攔截並呼叫 Host 傳入的導頁函式：同 zone <code>router.push()</code>（soft navigation）、跨 zone <code>location.assign()</code>。</li>
   <li><b>樣式</b>：CSS 放在 Shadow DOM 裡，和頁面完全隔離；頁面的設計系統進不去，要自己維護一份。</li>
-  <li><b>資料</b>：Web Component 自己 fetch 同網域的 <code>/api/menu</code>（<code>new URL('/api/menu', import.meta.url)</code>）；回 503 時 Menu 內顯示「無法讀取 menu.json」。</li>
   <li><b>部署</b>：改 Menu 元件只要部署 order（JS 檔在 order 的 build 時打包），invoice 不用部署。</li>
 </ul>
 
 <h3>5.3 對照</h3>
 <div class="tw wide"><table>
-<thead><tr><th>項目</th><th>Build-time</th><th>Runtime</th></tr></thead>
+<thead><tr><th>項目</th><th>Monorepo 共用元件</th><th>Web Component</th></tr></thead>
 <tbody>
-<tr><td>Menu 合進頁面的時間</td><td>build 時打包進每個 app</td><td>瀏覽器執行時才載入</td></tr>
+<tr><td>放進頁面的方式</td><td>app import 共用套件，build 時打包進每個 app</td><td>瀏覽器載入 order 提供的 JS 檔後掛上</td></tr>
 <tr><td>React 實例</td><td>與頁面同一份</td><td>自己另一份</td></tr>
 <tr><td>渲染位置</td><td>server 產生 HTML，再 hydrate</td><td>只在瀏覽器</td></tr>
 <tr><td>第一次看到 Menu</td><td>隨 HTML 出現</td><td>先顯示佔位框，載入後替換</td></tr>
@@ -591,10 +590,9 @@ export function safeNextPath(input: unknown): string {
 <div class="tw"><table>
 <thead><tr><th>內容</th><th>位置</th></tr></thead>
 <tbody>
-<tr><td>Build-time 的 Menu 元件</td><td><code>packages/menu/src/SiteMenu.tsx</code>、<code>MenuItemLink.tsx</code>、<code>ZoneLink.tsx</code></td></tr>
-<tr><td>Runtime 的 Host 元件（會打包進 app）</td><td><code>packages/menu/src/RuntimeMenuHost.tsx</code>、<code>runtime-navigate.ts</code></td></tr>
-<tr><td>Runtime 的 Menu 本體（Vite 打包成 <code>apps/order/public/menu-runtime/menu-runtime.js</code>）</td><td><code>apps/order/menu-runtime/</code>（設定：<code>vite.config.ts</code>）</td></tr>
-<tr><td>Menu 資料：讀檔、<code>/api/menu</code>、HTTP 版</td><td><code>packages/menu/src/read-local-menu.ts</code>、<code>menu-api.ts</code>、<code>get-menu.ts</code>（共用 <code>load-menu.ts</code>）；route 在 <code>apps/order/src/app/api/menu/route.ts</code></td></tr>
+<tr><td>Monorepo 共用元件：Menu 元件</td><td><code>packages/menu/src/SiteMenu.tsx</code>、<code>MenuItemLink.tsx</code>、<code>ZoneLink.tsx</code></td></tr>
+<tr><td>Web Component：Host 元件（會打包進 app）</td><td><code>packages/menu/src/RuntimeMenuHost.tsx</code>、<code>runtime-navigate.ts</code></td></tr>
+<tr><td>Web Component：Menu 本體（Vite 打包成 <code>apps/order/public/menu-runtime/menu-runtime.js</code>）</td><td><code>apps/order/menu-runtime/</code>（設定：<code>vite.config.ts</code>）</td></tr>
 </tbody></table></div>
 </section>
 
