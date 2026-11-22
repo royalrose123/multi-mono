@@ -7,19 +7,25 @@ order（主網站）與 invoice 是兩個各自部署的 Next.js 15 App Router a
 
 ## 前置需求
 
-- [nvm](https://github.com/nvm-sh/nvm)，Node 20.20.2（`nvm install && nvm use`）
-- `corepack enable`（pnpm 版本由 `package.json` 的 `packageManager` 固定）
+- [nvm](https://github.com/nvm-sh/nvm)（Node 版本由 `.nvmrc` 固定為 20.20.2）
 - Docker Desktop（只有 Docker 相關指令需要）
+
+## 一鍵設定
+
+```bash
+git clone git@github.com:royalrose123/multi-mono.git
+cd multi-mono
+./setup.sh              # 要跑 E2E 的話：./setup.sh --with-e2e
+```
+
+`setup.sh` 會依序：用 nvm 安裝並切換到 `.nvmrc` 的 Node、用 corepack 啟用 `package.json` 指定的 pnpm（失敗時改用 npm 全域安裝）、`pnpm install --frozen-lockfile`、`pnpm bootstrap` 建立 `apps/*/.env.local`（已存在則保留）、檢查 Docker 是否可用。可以重複執行。
 
 ## 本機開發
 
 ```bash
-pnpm install
-pnpm bootstrap   # 建立 apps/*/.env.local
+nvm use
 pnpm dev         # order:3000、invoice:3001，加上 runtime Menu 的 Vite watch
 ```
-
-從舊版（有 config-server）升級：`apps/*/.env.local` 若還有 `localhost:4000` 或 `MENU_RUNTIME_URL`，依 `.env.example` 更新（invoice 的 `MENU_CONFIG_URL` 改為 `http://localhost:3000/api/menu`）。
 
 打開 http://localhost:3000 ，demo 帳號 `alice / alice123`。
 
