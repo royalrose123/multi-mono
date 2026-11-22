@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order × Invoice 技術評估</title>
+<style>
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --surface-2: #f0f0ec;
+  --text: #1c1d1f;
+  --muted: #5c5f66;
+  --line: #d9d9d3;
+  --accent: #2f5fd0;
+  --order: #2563eb;
+  --invoice: #15803d;
+  --config: #a15c07;
+  --ok: #157f3b;
+  --warn: #9a5b00;
+  --bad: #b42318;
+  --ok-bg: #e7f4ec;
+  --warn-bg: #fbf1df;
+  --bad-bg: #fbe9e7;
+  --note-bg: #eaf0fc;
+  --code-bg: #f2f2ee;
+  --shadow: 0 1px 2px rgba(0,0,0,.05);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141517;
+    --surface: #1c1d20;
+    --surface-2: #25272b;
+    --text: #e8e8e6;
+    --muted: #a3a5ab;
+    --line: #36383d;
+    --accent: #8aaaf5;
+    --order: #7ea6f7;
+    --invoice: #5fcf8a;
+    --config: #e3a54e;
+    --ok: #6fd394;
+    --warn: #e8b35c;
+    --bad: #f08a7f;
+    --ok-bg: #18301f;
+    --warn-bg: #33270f;
+    --bad-bg: #3a1c19;
+    --note-bg: #1c2740;
+    --code-bg: #232428;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.7 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Segoe UI", sans-serif;
+}
+a { color: var(--accent); }
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 16px 64px;
+}
+header.top { padding: 32px 0 8px; }
+header.top h1 { margin: 0 0 4px; font-size: 1.75rem; line-height: 1.3; }
+header.top p { margin: 0; color: var(--muted); }
+nav.toc {
+  margin: 20px 0 8px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+nav.toc strong { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 4px; }
+nav.toc ol { margin: 0; padding-left: 1.4em; columns: 2; column-gap: 24px; }
+nav.toc li { break-inside: avoid; font-size: .95rem; }
+nav.toc a { text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
+main { min-width: 0; }
+@media (max-width: 520px) { nav.toc ol { columns: 1; } }
+@media (min-width: 1000px) {
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); column-gap: 40px; }
+  header.top { grid-column: 1 / -1; }
+  nav.toc {
+    position: sticky; top: 16px; align-self: start;
+    margin-top: 28px; max-height: calc(100vh - 32px); overflow-y: auto;
+  }
+  nav.toc ol { columns: 1; }
+}
+.content { max-width: 860px; }
+section { padding-top: 12px; scroll-margin-top: 12px; }
+h2 { font-size: 1.4rem; margin: 36px 0 8px; padding-bottom: 6px; border-bottom: 2px solid var(--line); line-height: 1.35; }
+h3 { font-size: 1.1rem; margin: 28px 0 6px; line-height: 1.4; }
+p, ul, ol { margin: 8px 0; }
+li { margin: 2px 0; }
+.lead {
+  margin: 12px 0 16px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+.lead b:first-child { color: var(--accent); }
+.callout { margin: 12px 0; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); }
+.callout.fix { background: var(--warn-bg); border-color: var(--warn); }
+.callout.note { background: var(--note-bg); }
+.callout.bad { background: var(--bad-bg); border-color: var(--bad); }
+.callout > :first-child { margin-top: 0; }
+.callout > :last-child { margin-bottom: 0; }
+.tw { overflow-x: auto; margin: 10px 0 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; line-height: 1.55; }
+.tw.wide table { min-width: 760px; }
+.tw.mid table { min-width: 560px; }
+th, td { padding: 8px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+tr.pick td { background: var(--ok-bg); }
+.tw.wide td:first-child { min-width: 8.5em; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.y { color: var(--ok); font-weight: 600; }
+.m { color: var(--warn); font-weight: 600; }
+.n { color: var(--bad); font-weight: 600; }
+.tag { display: inline-block; padding: 0 7px; border-radius: 999px; font-size: .8rem; font-weight: 600; border: 1px solid currentColor; white-space: nowrap; }
+.tag.y { background: var(--ok-bg); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 10px 0 16px; padding: 12px 14px; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; line-height: 1.5; }
+pre code { background: none; padding: 0; font-size: .85rem; overflow-wrap: normal; white-space: pre; }
+.cm { color: var(--muted); }
+figure { margin: 12px 0 20px; }
+.fig { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.fig svg { display: block; width: 100%; height: auto; color: var(--text); }
+.fig.arch svg { min-width: 640px; }
+.fig.tri svg { min-width: 420px; max-width: 620px; margin: 0 auto; }
+figcaption { font-size: .85rem; color: var(--muted); margin-top: 6px; }
+svg .box { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.5; }
+svg .box.order { stroke: var(--order); stroke-width: 2; }
+svg .box.invoice { stroke: var(--invoice); stroke-width: 2; }
+svg .box.config { stroke: var(--config); stroke-width: 2; }
+svg .t { fill: currentColor; font-size: 14px; font-weight: 600; }
+svg .s { fill: var(--muted); font-size: 11.5px; }
+svg .l { fill: currentColor; font-size: 11.5px; }
+svg .arrow { stroke: currentColor; stroke-width: 1.6; fill: none; }
+svg .arrow.dash { stroke-dasharray: 6 4; stroke: var(--config); }
+svg .arrow.zone { stroke: var(--invoice); }
+svg .edge { stroke: var(--line); stroke-width: 3; }
+svg .edge.pick { stroke: var(--ok); stroke-width: 5; }
+svg .node { fill: var(--surface-2); stroke: currentColor; stroke-width: 1.5; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 12px 0; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.kpi .v { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi .k { font-size: .82rem; color: var(--muted); }
+.small { font-size: .88rem; color: var(--muted); }
+footer { margin-top: 48px; font-size: .85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+</style>
+</head>
+<body>
+<div class="layout">
+<header class="top">
+  <h1>Order × Invoice 技術評估</h1>
+  <p>Next.js 15 Multi-Zones demo：兩個獨立部署的 App Router app 組成同一個網站。撰寫與驗證日期：2026-11-22。</p>
+</header>
+
+<nav class="toc" aria-label="章節目錄">
+  <strong>目錄</strong>
+  <ol>
+    <li><a href="#goal">背景與目標</a></li>
+    <li><a href="#choice">選型</a></li>
+    <li><a href="#arch">架構圖</a></li>
+    <li><a href="#impl">實作重點</a></li>
+    <li><a href="#menu">Build-time vs Runtime Menu</a></li>
+    <li><a href="#change">共用程式碼的變更流程</a></li>
+    <li><a href="#deploy">部署</a></li>
+    <li><a href="#limits">已知限制與風險</a></li>
+    <li><a href="#verify">驗證結果</a></li>
+  </ol>
+</nav>
+
+<main class="content">
+
+<!-- 1 -->
+<section id="goal">
+<h2>1. 背景與目標</h2>
+<div class="lead"><b>結論：</b>用 Next.js 官方的 Multi-Zones，把 order 與 invoice 兩個 Next 15 App Router 專案組成同一個網站。兩邊各自 build、各自部署；Menu、設計系統與登入狀態共用。代價是跨 zone 換頁一律整頁載入。</div>
+<p>需求：</p>
+<ul>
+  <li>兩個獨立的 Next 15 App Router 專案（<b>order</b>、<b>invoice</b>），使用者看到的是同一個網域。</li>
+  <li><b>各自上線</b>：只改 invoice 就只部署 invoice。</li>
+  <li><b>共用 Menu</b>：兩邊的 Menu 一致，改選單內容最好不用部署任何 app。</li>
+  <li>共用登入：在 order 登入，進 invoice 也是登入狀態。</li>
+</ul>
+<p>demo 範圍：不做真正的認證、資料庫、i18n，也沒有實際部署到 Azure（只寫對應表與 CI 範例）。</p>
+</section>
+
+<!-- 2 -->
+<section id="choice">
+<h2>2. 選型</h2>
+<div class="lead"><b>結論：</b>在「獨立部署」與「完整 App Router 能力（SSR、RSC）」都不能放棄的前提下，可行的只剩路徑分流類的做法；其中 Multi-Zones 設定最少、官方支援，所以採用。Monorepo 用 pnpm + Turborepo、共用套件用 JIT packages、路由層先用 order 的 rewrites。</div>
+
+<h3 id="choice-10">2.1 十種做法比較（以 Next 15 App Router 為前提）</h3>
+<div class="tw wide"><table>
+<thead><tr><th>做法</th><th>App Router / RSC</th><th>獨立部署</th><th>跨站跳頁體驗</th><th>改動成本</th><th>結論</th></tr></thead>
+<tbody>
+<tr class="pick"><td><b>Multi-Zones</b>（rewrites）</td><td class="y">完整</td><td class="y">可</td><td class="m">跨 zone 整頁載入</td><td>低</td><td><span class="tag y">採用</span></td></tr>
+<tr><td>Vercel Microfrontends</td><td class="y">完整</td><td class="y">可</td><td class="m">整頁載入，有 prefetch 優化</td><td>低</td><td>綁定 Vercel；正式環境在 Azure，不採用</td></tr>
+<tr><td>Reverse Proxy / Gateway（Nginx、Front Door）</td><td class="y">完整</td><td class="y">可</td><td class="m">整頁載入</td><td>中</td><td>本質同 Multi-Zones，是正式環境可替換的路由層（見 2.6）</td></tr>
+<tr><td>Monorepo 合成單一 app</td><td class="y">完整</td><td class="n">不可</td><td class="y">最佳（全站 soft navigation）</td><td>中高</td><td>違反「各自上線」，不採用</td></tr>
+<tr><td>npm 套件（host 引入另一邊）</td><td class="m">部分</td><td class="n">要連動發版</td><td class="y">好</td><td>中</td><td>實際上變成單一 app，不採用</td></tr>
+<tr><td>Module Federation（nextjs-mf）</td><td class="n">不支援 App Router，已淡出</td><td class="y">可</td><td class="y">好</td><td>高</td><td>不採用</td></tr>
+<tr><td>qiankun / single-spa / wujie</td><td class="n">與 SSR / RSC / router 衝突</td><td class="y">可</td><td class="y">好</td><td>高</td><td>不採用</td></tr>
+<tr><td>Web Components</td><td class="n">無 SSR</td><td class="y">可</td><td class="y">好</td><td>中</td><td>只適合嵌入 widget；本 demo 的 runtime Menu 就是這個做法的對照組</td></tr>
+<tr><td>iframe</td><td class="m">各自完整，但被框住</td><td class="y">可</td><td class="n">差（高度、網址、焦點、SEO）</td><td>極低</td><td>不採用</td></tr>
+<tr><td>ESI / Fragment</td><td class="m">實驗性，hydration 難</td><td class="y">可</td><td class="m">視實作</td><td>高</td><td>不採用</td></tr>
+</tbody></table></div>
+<p class="small">另外討論過：Native ESM + import maps（瀏覽器直接 import 遠端 ESM，共享依賴要自己處理）與 Webpack Module Federation（<code>remoteEntry.js</code> + shared singleton 版本協商）。兩者在 App Router 下都只能在 client 端嵌入，而且無法共用 Next 內建的 React（App Router 使用 vendored React，見 2.4）。</p>
+
+<h3 id="choice-tri">2.2 三選二：獨立部署 / 一致體驗 / 完整 Next 能力</h3>
+<div class="lead"><b>結論：</b>三者最多同時拿兩個。本專案選「獨立部署 + 完整 Next 能力」，放棄跨 zone 的 soft navigation。</div>
+<figure>
+<div class="fig tri">
+<svg viewBox="0 0 560 330" role="img" aria-labelledby="tri-title tri-desc">
+  <title id="tri-title">三選二示意圖</title>
+  <desc id="tri-desc">三角形三個頂點是獨立部署、一致體驗、完整 Next 能力；每條邊代表一種取捨，獨立部署與完整 Next 能力之間的邊是 Multi-Zones，為本專案採用。</desc>
+  <line class="edge" x1="280" y1="50" x2="90" y2="270"/>
+  <line class="edge pick" x1="280" y1="50" x2="470" y2="270"/>
+  <line class="edge" x1="90" y1="270" x2="470" y2="270"/>
+  <circle class="node" cx="280" cy="50" r="10"/>
+  <circle class="node" cx="90" cy="270" r="10"/>
+  <circle class="node" cx="470" cy="270" r="10"/>
+  <text class="t" x="280" y="26" text-anchor="middle">獨立部署</text>
+  <text class="t" x="90" y="302" text-anchor="middle">一致體驗</text>
+  <text class="s" x="90" y="318" text-anchor="middle">soft nav、共用 runtime</text>
+  <text class="t" x="470" y="302" text-anchor="middle">完整 Next 能力</text>
+  <text class="s" x="470" y="318" text-anchor="middle">SSR、RSC</text>
+  <text class="l" x="166" y="146" text-anchor="end">runtime 整合</text>
+  <text class="s" x="166" y="162" text-anchor="end">犧牲 SSR / RSC</text>
+  <text class="l" x="394" y="146" style="fill: var(--ok); font-weight: 700">Multi-Zones（採用）</text>
+  <text class="s" x="394" y="162">犧牲跨 zone soft nav</text>
+  <text class="l" x="280" y="242" text-anchor="middle">單一 app</text>
+  <text class="s" x="280" y="258" text-anchor="middle">犧牲獨立部署</text>
+</svg>
+</div>
+<figcaption>每條邊是一個可行組合，邊的對角就是被犧牲的那一項。</figcaption>
+</figure>
+<div class="tw mid"><table>
+<thead><tr><th>組合</th><th>代表做法</th><th>犧牲</th></tr></thead>
+<tbody>
+<tr class="pick"><td>獨立部署 + 完整 Next 能力</td><td>Multi-Zones、Reverse Proxy</td><td>跨 zone 整頁載入</td></tr>
+<tr><td>一致體驗 + 完整 Next 能力</td><td>單一 app（monorepo 合成）</td><td>獨立部署</td></tr>
+<tr><td>獨立部署 + 一致體驗</td><td>Module Federation、qiankun、Web Components</td><td>SSR / RSC</td></tr>
+</tbody></table></div>
+<p><b>根本原因</b>：App Router 的 React、router 與 RSC 都在 build 時綁進整個 app。兩個分開 build 的 app 沒有共用的 router 狀態，也就不可能在它們之間 soft navigation。</p>
+
+<h3 id="choice-mono">2.3 Monorepo ≠ 單一 app</h3>
+<div class="lead"><b>結論：</b>Monorepo 只決定程式碼放在哪裡；部署單位由 app 的數量決定。本專案是一個 repo、兩個 app、兩個部署單位。</div>
+<ul>
+  <li>共用套件在 build 時被複製進每個 app。所以<b>改共用元件，所有用到它的 app 都要重新部署</b>，這和用不用 monorepo 無關：拆成兩個 repo + npm 套件，一樣要升版、再各自部署。</li>
+  <li>Monorepo 的價值：一個 PR 改完兩邊、版本一定一致、CI 用 <code>turbo --affected</code> 自動判斷要部署哪些 app（見 6.4）。</li>
+</ul>
+
+<h3 id="choice-react">2.4 React 18 與 App Router</h3>
+<div class="lead"><b>結論：</b>App Router 一律跑 Next 內建的 React 19，app 自己裝的 React 版本不影響。所以兩個 app 都裝 React 19（19.3.1），讓測試、型別與實際執行一致。</div>
+<p>在 Next 15.5.28 的原始碼中驗證（2026-11-22）：</p>
+<div class="tw mid"><table>
+<thead><tr><th>證據</th><th>內容</th><th>代表什麼</th></tr></thead>
+<tbody>
+<tr><td><code>next/package.json</code> 的 <code>peerDependencies.react</code></td><td><code>^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0</code></td><td>允許 React 18，是為 Pages Router 保留</td></tr>
+<tr><td><code>dist/build/create-compiler-aliases.js</code> 的 <code>createVendoredReactAliases</code></td><td>把 App Router 程式碼中的 <code>react</code>、<code>react-dom</code>、<code>react/jsx-runtime</code> 等 import 改指到 <code>next/dist/compiled/react*</code></td><td>App Router 根本不用 app 安裝的 React</td></tr>
+<tr><td><code>dist/compiled/react</code> 的版本</td><td><code>19.2.0-canary-0bdb9206-20250818</code></td><td>實際執行的是這個 React 19 canary</td></tr>
+</tbody></table></div>
+<p>安裝 React 18 只會影響 Pages Router、Vitest 測試環境與型別，造成「測試過了、實際跑的是另一個版本」的落差。</p>
+
+<h3 id="choice-tools">2.5 Monorepo 工具：共用套件的形式</h3>
+<div class="lead"><b>結論：</b>採用 pnpm workspace + Turborepo，共用套件用 Just-in-Time（JIT）packages：套件直接匯出 TypeScript 原始碼，由各 app 的 <code>transpilePackages</code> 編譯。</div>
+<div class="tw wide"><table>
+<thead><tr><th>方案</th><th>做法</th><th>優點</th><th>缺點</th><th>什麼情況改用</th></tr></thead>
+<tbody>
+<tr class="pick"><td><b>JIT packages</b>（採用）</td><td><code>exports</code> 指向 <code>src/*.ts</code>；app 設 <code>transpilePackages</code></td><td>沒有 build 步驟、改了直接 hot reload、設定最少</td><td>每個 app 各自編譯一次；不能直接發佈 npm；套件的編譯行為跟著 app 的設定走</td><td>現況：2 個 app、套件不對外發佈</td></tr>
+<tr><td>Compiled packages</td><td>套件用 tsc / tsup 輸出 <code>dist</code>，app 吃編譯後產物</td><td>Turborepo 可快取套件 build；可發佈 npm；app 的 build 較快</td><td>dev 要跑 watch；多一層 build 與 sourcemap 設定</td><td>套件要發佈給 repo 外使用，或 app 數量變多、build 時間成為瓶頸</td></tr>
+<tr><td>Nx</td><td>以 project graph 管理任務，plugin 生態</td><td>generators、module boundary 規則、分散式快取、多語言</td><td>較重、學習成本高、設定與 plugin 綁定</td><td>多團隊、多 app，需要強制模組邊界或非 JS 專案也要一起管</td></tr>
+</tbody></table></div>
+<p class="small">本 demo 例外：<code>@repo/menu-runtime</code> 是 compiled package（Vite library mode 輸出單一 ESM 檔），因為它要在瀏覽器端被獨立載入，不屬於任何 app 的 build。</p>
+
+<h3 id="choice-router">2.6 路由層</h3>
+<div class="lead"><b>結論：</b>demo 用 order 的 <code>next.config.ts</code> rewrites，本機與 Docker 設定相同、最少元件。正式環境可以換成 Azure Front Door，app 程式碼不用改（login 的 303 用相對路徑、middleware 依 <code>x-forwarded-host</code> 組網址）。</div>
+<div class="tw wide"><table>
+<thead><tr><th>方案</th><th>優點</th><th>缺點</th><th>適用</th></tr></thead>
+<tbody>
+<tr class="pick"><td><b>order rewrites</b>（採用）</td><td>不需要額外元件；本機 dev、Docker、正式環境同一套設定；invoice 可以完全不對外</td><td>invoice 的流量都經過 order（多一跳，order 掛了 invoice 也進不去）；<code>INVOICE_ZONE_URL</code> 在 build 時寫死</td><td>demo、zone 少、order 本來就是主網站</td></tr>
+<tr><td>Azure Front Door</td><td>邊緣路徑分流，兩個 app 對等；invoice 換網址只改 Front Door；附 CDN / WAF</td><td>本機無法重現；要設好 RSC 請求不快取的規則；費用</td><td>正式環境、在 Azure 上</td></tr>
+<tr><td>Nginx（自管）</td><td>彈性最大、可放在任何環境</td><td>多一個要維運、要 HA 的元件</td><td>非雲端或已有 Nginx gateway 的環境</td></tr>
+</tbody></table></div>
+</section>
+
+<!-- 3 -->
+<section id="arch">
+<h2>3. 架構圖</h2>
+<div class="lead"><b>結論：</b>瀏覽器只跟 order（同一個網域）說話；<code>/invoices/*</code> 由 order 在 server 端轉發到只在內網的 invoice。Menu 資料由 config-server 提供：build-time Menu 由兩個 app 的 server 端讀取，runtime Menu 由瀏覽器直接載入。</div>
+<figure>
+<div class="fig arch">
+<svg viewBox="0 0 800 450" role="img" aria-labelledby="arch-title arch-desc">
+  <title id="arch-title">系統架構圖</title>
+  <desc id="arch-desc">瀏覽器連到 order（host 8080，容器 3000）；order 把 /invoices 與 /invoices-static 轉發到內網的 invoice（3001）；order 與 invoice 的 server 端都向 config-server 讀取 menu.json；瀏覽器在 runtime 模式下直接向 config-server（host 8090）載入 runtime menu JS 與 menu.json；deploy 資料夾以 volume 掛進 config-server。</desc>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+    <marker id="ahc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" style="fill: var(--config)"/>
+    </marker>
+    <marker id="ahi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" style="fill: var(--invoice)"/>
+    </marker>
+  </defs>
+
+  <!-- boxes -->
+  <rect class="box" x="20" y="40" width="190" height="100" rx="10"/>
+  <text class="t" x="115" y="72" text-anchor="middle">瀏覽器</text>
+  <text class="s" x="115" y="94" text-anchor="middle">只看到一個網域</text>
+  <text class="s" x="115" y="112" text-anchor="middle">cookie：session（path=/）</text>
+  <text class="s" x="115" y="128" text-anchor="middle">cookie：menu-mode</text>
+
+  <rect class="box order" x="300" y="40" width="200" height="100" rx="10"/>
+  <text class="t" x="400" y="68" text-anchor="middle" style="fill: var(--order)">order（主網站）</text>
+  <text class="s" x="400" y="90" text-anchor="middle">host 8080 → 容器 3000</text>
+  <text class="s" x="400" y="108" text-anchor="middle">/、/orders、/login、/api/*</text>
+  <text class="s" x="400" y="126" text-anchor="middle">rewrites（build 時寫死）</text>
+
+  <rect class="box invoice" x="615" y="40" width="175" height="100" rx="10"/>
+  <text class="t" x="702" y="68" text-anchor="middle" style="fill: var(--invoice)">invoice</text>
+  <text class="s" x="702" y="90" text-anchor="middle">只在內網 :3001</text>
+  <text class="s" x="702" y="108" text-anchor="middle">/invoices、/invoices/*</text>
+  <text class="s" x="702" y="126" text-anchor="middle">assetPrefix /invoices-static</text>
+
+  <rect class="box config" x="300" y="320" width="200" height="100" rx="10"/>
+  <text class="t" x="400" y="348" text-anchor="middle" style="fill: var(--config)">config-server</text>
+  <text class="s" x="400" y="370" text-anchor="middle">host 8090 → 容器 4000</text>
+  <text class="s" x="400" y="388" text-anchor="middle">GET /menu.json（no-store）</text>
+  <text class="s" x="400" y="406" text-anchor="middle">GET /assets/menu-runtime.js</text>
+
+  <rect class="box" x="590" y="320" width="190" height="100" rx="10" style="stroke-dasharray: 5 4"/>
+  <text class="t" x="685" y="352" text-anchor="middle">deploy/menu.json</text>
+  <text class="s" x="685" y="374" text-anchor="middle">volume ./deploy:/config:ro</text>
+  <text class="s" x="685" y="392" text-anchor="middle">改這裡不用部署任何 app</text>
+
+  <!-- browser -> order -->
+  <line class="arrow" x1="210" y1="90" x2="297" y2="90" marker-end="url(#ah)"/>
+  <text class="l" x="254" y="80" text-anchor="middle">所有請求</text>
+  <text class="s" x="254" y="108" text-anchor="middle">同網域</text>
+
+  <!-- order -> invoice -->
+  <line class="arrow zone" x1="500" y1="90" x2="612" y2="90" marker-end="url(#ahi)"/>
+  <text class="l" x="557" y="80" text-anchor="middle">rewrite</text>
+  <text class="s" x="557" y="108" text-anchor="middle">x-forwarded-host</text>
+
+  <!-- order -> config -->
+  <line class="arrow" x1="400" y1="140" x2="400" y2="317" marker-end="url(#ah)"/>
+  <text class="l" x="390" y="206" text-anchor="end">server fetch menu.json</text>
+  <text class="s" x="390" y="222" text-anchor="end">revalidate 60s · tag menu</text>
+
+  <!-- invoice -> config -->
+  <path class="arrow" d="M660,140 V262 H470 V317" marker-end="url(#ah)"/>
+  <text class="l" x="670" y="206">server fetch menu.json</text>
+  <text class="s" x="670" y="222">（與 order 相同）</text>
+
+  <!-- browser -> config (runtime) -->
+  <path class="arrow dash" d="M115,140 V385 H297" marker-end="url(#ahc)"/>
+  <text class="l" x="126" y="290">僅 runtime 模式：</text>
+  <text class="s" x="126" y="306">瀏覽器載入 menu-runtime.js</text>
+  <text class="s" x="126" y="322">與 menu.json（CORS）</text>
+
+  <!-- volume -> config -->
+  <line class="arrow" x1="590" y1="370" x2="503" y2="370" marker-end="url(#ah)"/>
+  <text class="s" x="546" y="360" text-anchor="middle">掛載</text>
+</svg>
+</div>
+<figcaption>port 為 Docker compose 的設定；本機 dev 時 order 3000、invoice 3001、config-server 4000。虛線為 runtime Menu 的路徑。</figcaption>
+</figure>
+<ul>
+  <li><b>同網域 cookie</b>：瀏覽器眼中只有 order 的網域，所以 order 設的 <code>session</code> cookie（<code>path=/</code>）也會帶到 <code>/invoices/*</code>，兩個 app 用同一個 <code>AUTH_SECRET</code> 驗證 JWT。</li>
+  <li><b>invoice 不對外</b>：compose 只 <code>expose</code> 3001，從 host 連不到（<code>pnpm docker:check</code> 驗證）。</li>
+</ul>
+</section>
+
+<!-- 4 -->
+<section id="impl">
+<h2>4. 實作重點</h2>
+
+<h3 id="impl-prefix">4.1 <code>assetPrefix</code> vs <code>basePath</code></h3>
+<div class="lead"><b>結論：</b>invoice 只設 <code>assetPrefix: '/invoices-static'</code>，不設 <code>basePath</code>；頁面直接放在 <code>app/invoices/</code>。這是 Next 官方 Multi-Zones 文件的做法。</div>
+<div class="callout fix">
+<p><b>修正先前的說法</b>：先前討論中的範例用了 <code>basePath: '/shop'</code> 來切 zone，這不是官方建議的做法，本專案不採用。依 <a href="https://nextjs.org/docs/app/guides/multi-zones">Next.js 官方 Multi-Zones 文件</a>，zone 應該用 <code>assetPrefix</code> 讓自己的 <code>/_next/*</code> 靜態資源不和主網站衝突，頁面路徑則直接用資料夾結構表達（<code>app/invoices/…</code>）。</p>
+</div>
+<div class="tw mid"><table>
+<thead><tr><th></th><th><code>assetPrefix</code>（採用）</th><th><code>basePath</code></th></tr></thead>
+<tbody>
+<tr><td>影響範圍</td><td>只有 Next 產生的靜態資源網址：<code>/invoices-static/_next/…</code></td><td>所有路由、<code>next/link</code>、router、public 檔都自動加前綴</td></tr>
+<tr><td>頁面位置</td><td><code>app/invoices/page.tsx</code> 就是 <code>/invoices</code>，網址與檔案一一對應</td><td>頁面放在 <code>app/</code>，網址由設定推導</td></tr>
+<tr><td>跨 zone 連結</td><td>寫完整站內路徑（<code>/orders/1001</code>）就對</td><td>連到前綴外的路徑要額外處理，容易寫錯</td></tr>
+<tr><td>public 檔</td><td>要自己放在 <code>public/invoices-static/</code></td><td>自動帶前綴</td></tr>
+</tbody></table></div>
+<pre><code><span class="cm">// apps/invoice/next.config.ts（節錄）</span>
+const nextConfig: NextConfig = {
+  <span class="cm">// 依 Next 官方 Multi-Zones 文件：zone 用 assetPrefix（不是 basePath），頁面直接放在 app/invoices/。</span>
+  assetPrefix: '/invoices-static',
+  output: process.env.BUILD_STANDALONE === '1' ? 'standalone' : undefined,
+  transpilePackages: ['@repo/ui', '@repo/menu', '@repo/auth', '@repo/zone-inspector'],
+  async headers() {
+    <span class="cm">// 經 order 轉發時原樣傳回，用來判斷「是誰回應的」</span>
+    return [{ source: '/:path*', headers: [{ key: 'x-zone', value: 'invoice' }] }]
+  },
+}
+
+<span class="cm">// apps/order/next.config.ts（節錄）</span>
+async rewrites() {
+  return {
+    beforeFiles: [],
+    afterFiles: [
+      { source: '/invoices', destination: `${INVOICE_ZONE_URL}/invoices` },
+      { source: '/invoices/:path+', destination: `${INVOICE_ZONE_URL}/invoices/:path+` },
+      { source: '/invoices-static/:path+', destination: `${INVOICE_ZONE_URL}/invoices-static/:path+` },
+    ],
+    fallback: [],
+  }
+}</code></pre>
+
+<h3 id="impl-zonelink">4.2 <code>ZoneLink</code> 與路由表</h3>
+<div class="lead"><b>結論：</b>所有可能跨 zone 的連結都用 <code>ZoneLink</code>：同 zone 渲染 <code>next/link</code>（soft navigation），跨 zone 渲染一般 <code>&lt;a&gt;</code>（整頁載入）。</div>
+<ul>
+  <li><code>zoneForPath(path)</code>：<code>/invoices</code> 或 <code>/invoices/…</code> 屬於 invoice，其他都屬於 order（<code>/invoicesX</code> 也屬於 order，有測試）。路由表只有這一份，Menu JSON 不重複標記 zone。</li>
+  <li>為什麼不能全部用 <code>next/link</code>：<code>next/link</code> 會嘗試 soft navigation（prefetch、RSC 請求），但跨 zone 的目標不在本 app 的 route tree 裡。官方 Multi-Zones 文件要求跨 zone 連結用 <code>&lt;a&gt;</code>。</li>
+</ul>
+<pre><code><span class="cm">// packages/menu/src/ZoneLink.tsx</span>
+export function ZoneLink({ href, currentZone, children, ...rest }: Props) {
+  if (zoneForPath(href) === currentZone) {
+    return &lt;Link href={href} {...rest}&gt;{children}&lt;/Link&gt;
+  }
+  return &lt;a href={href} {...rest}&gt;{children}&lt;/a&gt;
+}</code></pre>
+
+<h3 id="impl-menu">4.3 共用 Menu（build-time）</h3>
+<div class="lead"><b>結論：</b>Menu 的<b>內容</b>是 config-server 上的 <code>menu.json</code>，<b>元件</b>是 <code>@repo/menu</code>，跟著 app 一起 build。改內容不用部署，任何讀取失敗都退回套件內建的備援 Menu，畫面不會壞。</div>
+<pre><code><span class="cm">// packages/menu/src/get-menu.ts（節錄）</span>
+export async function getMenu(url = process.env.MENU_CONFIG_URL): Promise&lt;LoadedMenu&gt; {
+  if (!url) return fallback('未設定 MENU_CONFIG_URL')
+  try {
+    const res = await fetch(url, { next: { revalidate: 60, tags: [MENU_TAG] } })
+    if (!res.ok) return fallback(`HTTP ${res.status}`)
+    const parsed = menuConfigSchema.safeParse(await res.json())
+    if (!parsed.success) return fallback(`格式錯誤：${parsed.error.issues[0]?.message ?? 'unknown'}`)
+    return { ...parsed.data, source: 'remote' }
+  } catch (err) {
+    return fallback(err instanceof Error ? err.message : String(err))
+  }
+}</code></pre>
+<ul>
+  <li><b>快取</b>：60 秒、tag <code>menu</code>。改 <code>menu.json</code> 後最慢 60 秒生效；要立即生效就呼叫 revalidate API。</li>
+  <li><b>zod 驗證</b>：<code>href</code> 必須是站內路徑；未知欄位忽略（為 expand / contract 預留）；<code>version</code> 是 <code>literal(1)</code>。</li>
+  <li><b>來源標記</b>：回傳 <code>source: 'remote' | 'fallback'</code>，工具列顯示，E2E 用它判斷是否走備援。</li>
+  <li><b>Revalidate API</b>：order <code>POST /api/revalidate-menu</code>、invoice <code>POST /invoices/api/revalidate-menu</code>，需 <code>Authorization: Bearer &lt;REVALIDATE_TOKEN&gt;</code>，成功時 <code>revalidateTag('menu')</code>。兩個 app 的快取是分開的，所以兩個都要叫。</li>
+  <li><b>feature flag</b>：<code>flags.menuV2</code> 決定渲染 V1 或 V2 樣式，兩個 zone 讀同一份 JSON，所以會同時切換（E2E 驗證）。</li>
+</ul>
+
+<h3 id="impl-auth">4.4 登入</h3>
+<div class="lead"><b>結論：</b>JWT（HS256，8 小時）放在同網域的 <code>httpOnly</code> cookie <code>session</code>。登入用一般 HTML form POST + <b>303</b>，不用 Server Action；redirect 目標一律經過 <code>safeNextPath</code>；invoice 的 middleware 必須用 <code>publicUrl()</code> 組網址。</div>
+<ul>
+  <li><b>為什麼不用 Server Action</b>：登入後的目標可能在 invoice。Server Action 的 <code>redirect()</code> 走 order 的 client router，跨 zone 會失敗。form POST 收到 303，瀏覽器整頁 GET 目標網址，不管目標在哪個 zone 都正確。</li>
+  <li><b>303 的 Location 用相對路徑</b>：前面是 order 直連、Docker 還是 Front Door 都不用改。</li>
+  <li><b>保護頁面</b>：兩個 app 各自的 <code>middleware.ts</code>（invoice 排除 <code>/invoices/api/*</code>，那裡用 token 保護），沒有有效 session 時 307 到 <code>/login?next=…</code>。</li>
+</ul>
+<div class="callout bad">
+<p><b>坑：<code>x-forwarded-host</code></b>。order 的 rewrite proxy 設了 <code>changeOrigin: true</code>（<code>next/dist/server/lib/router-utils/proxy-request.js</code>），invoice 收到的 <code>Host</code> 是內網的 <code>invoice:3001</code>，原本的網域只留在 <code>x-forwarded-host</code>。middleware 若直接用 <code>request.url</code> 組 redirect，瀏覽器會被導到連不到的內網位址。</p>
+</div>
+<pre><code><span class="cm">// packages/auth/src/public-url.ts</span>
+export function publicUrl(path: string, headers: Headers, requestUrl: string): URL {
+  const req = new URL(requestUrl)
+  const host = first(headers.get('x-forwarded-host')) ?? req.host
+  const proto = first(headers.get('x-forwarded-proto')) ?? req.protocol.replace(':', '')
+  return new URL(path, `${proto}://${host}`)
+}</code></pre>
+<p><code>safeNextPath</code> 只接受以單一 <code>/</code> 開頭的站內路徑。實作時在 code review 發現第一版有 open redirect：<code>/..//evil.com</code>、<code>/.//evil.com</code>、<code>/a/..//evil.com</code>、<code>/%2e%2e//evil.com</code> 通過了「開頭不是 <code>//</code>」的檢查，但經過 URL 正規化（dot-segment）後變成 <code>//evil.com</code>。修正為正規化後再檢查一次，並補上這四個測試：</p>
+<pre><code><span class="cm">// packages/auth/src/safe-next.ts</span>
+export function safeNextPath(input: unknown): string {
+  if (typeof input !== 'string' || input === '') return '/'
+  if (!input.startsWith('/') || input.startsWith('//') || input.includes('\\')) return '/'
+  try {
+    const url = new URL(input, BASE)
+    if (url.origin !== BASE) return '/'
+    const normalized = url.pathname + url.search + url.hash
+    <span class="cm">// 正規化（dot-segment）後可能變成 //host，需再檢查一次</span>
+    if (normalized.startsWith('//') || normalized.includes('\\')) return '/'
+    return normalized
+  } catch {
+    return '/'
+  }
+}</code></pre>
+
+<h3 id="impl-pitfalls">4.5 其他 Multi-Zones 的坑</h3>
+<div class="tw wide"><table>
+<thead><tr><th>坑</th><th>原因</th><th>本 demo 的處理</th></tr></thead>
+<tbody>
+<tr><td><code>/_next/image</code> 不套用 <code>assetPrefix</code></td><td>invoice 的圖片最佳化請求會打到 order 的 <code>/_next/image</code></td><td>不使用 <code>next/image</code>；需要時另設 rewrite 或改用 CDN 圖片</td></tr>
+<tr><td>order 不能定義套用到 <code>/:path*</code> 的 <code>headers()</code></td><td>headers 在 rewrite 之前套用，會蓋掉 invoice 回傳的值（例如 <code>x-zone</code>）</td><td><code>next.config.ts</code> 註解寫明；E2E 檢查 invoice 資源帶 <code>x-zone: invoice</code>、order 的沒有</td></tr>
+<tr><td>order 不能有 <code>app/invoices</code> 或根層 catch-all 路由</td><td>rewrites 放在 <code>afterFiles</code>：order 自己的檔案路由先比對，會把 invoice 的路徑吃掉</td><td>order 沒有這些路由；README 列為規則</td></tr>
+<tr><td><code>INVOICE_ZONE_URL</code> 在 build 時寫死</td><td>rewrites 在 build 時寫進 <code>routes-manifest</code></td><td>Dockerfile 用 build arg、缺值時 build 失敗；<code>next.config.ts</code> 驗證格式並在 build log 印出目標</td></tr>
+</tbody></table></div>
+
+<h3 id="impl-real">4.6 實作中實際踩到的坑</h3>
+<div class="lead"><b>結論：</b>以下都是實作或 review 時實際遇到、並已處理的問題，對之後的專案有參考價值。</div>
+<div class="tw wide"><table>
+<thead><tr><th>坑</th><th>症狀</th><th>原因</th><th>處理</th></tr></thead>
+<tbody>
+<tr><td>rewrite 後的 Host</td><td>未登入進 <code>/invoices</code> 被導到 <code>http://invoice:3001/login</code></td><td>proxy <code>changeOrigin: true</code>，原網域只在 <code>x-forwarded-host</code></td><td><code>publicUrl()</code>；<code>docker:check</code> 驗證 Location 是 8080</td></tr>
+<tr><td><code>safeNextPath</code> open redirect</td><td><code>/..//evil.com</code> 登入後被導到外站</td><td>先檢查、後正規化，dot-segment 正規化產生 <code>//host</code></td><td>正規化後再檢查；新增 4 個測試（code review 發現）</td></tr>
+<tr><td>server 端 import 的 barrel 裡有 hook</td><td>layout 一 import <code>@repo/zone-inspector</code> 就 500</td><td><code>index.ts</code> re-export 了 <code>useNavigationTracker</code>，hook 檔沒有 <code>'use client'</code>，被當成 Server Component 程式評估</td><td>在 <code>useNavigationTracker.ts</code> 加 <code>'use client'</code></td></tr>
+<tr><td>production 的 route announcer</td><td>Docker 上 2 個 E2E 失敗（strict mode：<code>getByRole('alert')</code> 比對到 2 個元素），本機 dev 正常</td><td>Next production build 的 <code>#__next-route-announcer__</code> 也是 <code>role="alert"</code></td><td>locator 改為 <code>[role="alert"]:not(#__next-route-announcer__)</code>，斷言不放寬</td></tr>
+<tr><td>RTL 沒有自動 cleanup</td><td>前一個測試的 DOM 殘留，查詢到重複元素</td><td>Vitest 沒開 <code>globals</code>，Testing Library 找不到全域 <code>afterEach</code>，不會自動註冊 cleanup</td><td><code>vitest.setup.ts</code> 手動 <code>afterEach(cleanup)</code></td></tr>
+</tbody></table></div>
+
+<h3 id="impl-ui">4.7 設計系統與導頁視覺化</h3>
+<ul>
+  <li><b><code>@repo/ui</code></b>：Tailwind v4 的 <code>@theme</code> token 放在 <code>theme.css</code>，元件為 <code>Button</code>、<code>Card</code>、<code>Table</code>、<code>Badge</code>、<code>PageHeader</code>。zone 主色由各 app 定義 <code>--color-zone</code>（order 藍、invoice 綠），一眼看出目前在哪個 zone。</li>
+  <li><b><code>@source</code></b>：Tailwind v4 的自動偵測只掃 app 自己的檔案（並忽略 <code>node_modules</code>），共用元件用到的 class 不會被產生。各 app 的 <code>globals.css</code> 加 <code>@source "../../../../packages";</code>（路徑相對於該 CSS 檔）。</li>
+  <li><b><code>@repo/zone-inspector</code></b>：畫面底部的工具列，顯示目前 zone、整頁載入時間（<code>performance.timeOrigin</code>）、soft navigation 次數、Menu 來源（remote / fallback / runtime），並可切換 build / runtime Menu。計數存在 module 層級變數：soft navigation 時 module 不重跑，整頁載入時自然歸零。E2E 就靠這些 <code>data-*</code> 屬性與 window 記號判斷是 soft 還是整頁載入。</li>
+</ul>
+</section>
+
+<!-- 5 -->
+<section id="menu">
+<h2>5. Build-time Menu vs Runtime Menu</h2>
+<div class="lead"><b>結論：</b>Menu <b>內容</b>放 JSON，就拿到「不用部署」的大部分好處；Menu <b>元件</b>跟著 app 部署，換到 SSR、較快出現與故障時的備援。Runtime Menu（Web Component 從 CDN 載入）只在「元件本身也要不部署 app 就更新」時才值得，代價是沒有 SSR、多一份 React、soft navigation 要靠 host 搭橋。</div>
+<div class="kpis">
+  <div class="kpi"><div class="v">55 ms</div><div class="k">Build-time Menu 出現（中位數）</div></div>
+  <div class="kpi"><div class="v">124 ms</div><div class="k">Runtime Menu 出現（中位數）</div></div>
+  <div class="kpi"><div class="v">76.0 KB</div><div class="k">runtime bundle gzip（77,794 bytes）</div></div>
+</div>
+<div class="tw wide"><table>
+<thead><tr><th>項目</th><th>Build-time Menu（採用為預設）</th><th>Runtime Menu（對照組）</th></tr></thead>
+<tbody>
+<tr><td>Menu 出現時間，中位數（5 次）</td><td class="num"><b>55 ms</b></td><td class="num"><b>124 ms</b></td></tr>
+<tr><td>5 次原始值</td><td class="num">68、54、56、55、54</td><td class="num">120、124、124、123、125</td></tr>
+<tr><td>HTML 原始碼是否包含 Menu</td><td class="y">是（SSR）</td><td class="n">否（只有佔位框）</td></tr>
+<tr><td>額外下載</td><td>無，Menu 是頁面的一部分</td><td><code>menu-runtime.js</code> 302,263 bytes（295.2 KB），gzip 77,794 bytes（76.0 KB），自帶一份 React 19</td></tr>
+<tr><td>config-server 故障</td><td class="y">改用內建備援 Menu，工具列顯示 <code>fallback</code>，畫面正常</td><td class="n">只剩錯誤提示，沒有 Menu</td></tr>
+<tr><td>改 Menu 內容</td><td>改 <code>menu.json</code>，60 秒內或 revalidate 後生效，不部署 app</td><td>改 <code>menu.json</code>，下次載入頁面生效，不部署 app</td></tr>
+<tr><td>改 Menu 元件 / 樣式</td><td>order、invoice 都要部署</td><td>只重新打包上傳 <code>menu-runtime.js</code>（部署 config-server），app 不動</td></tr>
+<tr><td>soft navigation</td><td><code>ZoneLink</code> 直接用 <code>next/link</code></td><td>Web Component 無法用 <code>next/link</code>，連結點擊呼叫 host 傳入的 <code>navigate</code>：同 zone <code>router.push()</code>、跨 zone <code>location.assign()</code></td></tr>
+<tr><td>與 app 的 React</td><td>同一個實例</td><td>不同實例（Shadow DOM 內自己的 React 19）</td></tr>
+</tbody></table></div>
+<p class="small"><b>量測條件</b>：2026-11-22 10:38:45 UTC（台北 18:38），本機 macOS 上的 Docker compose（<code>http://localhost:8080</code>），Playwright 1.65.1 Chromium，<code>pnpm measure</code>（<code>e2e/tests/measure.spec.ts</code>）。每次用全新的 browser context（無快取），從 <code>page.goto('/', { waitUntil: 'commit' })</code> 到 Menu 的「訂單」連結出現為止；兩種模式各 5 次取中位數。「HTML 是否包含 Menu」以 HTTP 取得首頁並檢查 <code>data-menu="build"</code> 標記。bundle 大小量的是 <code>packages/menu-runtime/dist/menu-runtime.js</code>（與 config-server 實際提供的檔案大小相同）。原始結果在 <code>e2e/results/menu-metrics.json</code>（git-ignored）。</p>
+<div class="callout note">
+<p><b>解讀</b>：本機量測沒有網路延遲，69 ms 的差距主要是 runtime 版要在 hydration 後才開始下載、執行 JS 並再抓一次 <code>menu.json</code>。正式環境中 config-server 在另一個網域（CDN），多出 DNS / TLS 與兩次往返，差距只會更大（推論，未實測）。</p>
+</div>
+</section>
+
+<!-- 6 -->
+<section id="change">
+<h2>6. 共用程式碼的變更流程</h2>
+<div class="lead"><b>結論：</b>先判斷改動屬於哪一類：改內容不部署；改元件兩個 app 都部署，大改用 feature flag 讓兩邊同時切換；改資料格式用 expand / contract 分三步。哪些服務要部署由 <code>pnpm deploy:affected</code>（Turborepo <code>--affected</code>）決定。</div>
+
+<h3>6.1 三種改動</h3>
+<div class="tw wide"><table>
+<thead><tr><th>改動</th><th>範例</th><th>要部署什麼</th><th>做法</th></tr></thead>
+<tbody>
+<tr><td>內容</td><td>新增 Menu 項目、改文字</td><td>不部署 app</td><td>改 <code>deploy/menu.json</code>，等 60 秒或呼叫兩個 revalidate API</td></tr>
+<tr><td>元件 / 樣式</td><td>改 <code>packages/menu</code>、<code>packages/ui</code></td><td>order、invoice 都部署</td><td>小改直接部署；大改用 feature flag（6.3）</td></tr>
+<tr><td>資料格式</td><td>改 <code>menu.json</code> 的結構</td><td>兩個 app 部署兩次</td><td>expand / contract（6.2）</td></tr>
+</tbody></table></div>
+
+<h3>6.2 expand / contract</h3>
+<ol>
+  <li><b>Expand</b>：先部署能同時接受新、舊格式的程式（schema 用 union 或新欄位設成選填）。兩個 app 都部署完成前，JSON 不動。</li>
+  <li><b>切換</b>：改 <code>menu.json</code> 成新格式，revalidate。</li>
+  <li><b>Contract</b>：確認兩邊都穩定後，再部署移除舊格式支援的程式。</li>
+</ol>
+<p class="small">只「新增欄位」時不需要 expand：schema 忽略未知欄位，舊程式會照常運作。反過來，若直接把 <code>version</code> 改成 2，還沒部署新程式的 app 會驗證失敗並退回備援 Menu（不會壞，但內容是舊的）。</p>
+
+<h3>6.3 <code>menuV2</code> feature flag</h3>
+<p>兩個 app 的部署一定有時間差。大改時：先把 V1、V2 兩版元件都部署到 order 與 invoice（<code>flags.menuV2: false</code>，使用者看不到差別）；兩邊都上線後，把 <code>menu.json</code> 的 <code>menuV2</code> 改成 <code>true</code> 並 revalidate，兩個 zone 讀同一份 JSON，<b>同時</b>切換。出問題時把 flag 改回去即可回滾，不用重新部署。</p>
+
+<h3>6.4 部署時間差的三種處理</h3>
+<div class="tw mid"><table>
+<thead><tr><th>方式</th><th>適用</th><th>代價</th></tr></thead>
+<tbody>
+<tr><td>直接各自部署</td><td>小改（顏色、間距）</td><td>幾分鐘內兩邊樣式可能不同</td></tr>
+<tr><td>feature flag（<code>menuV2</code>）</td><td>大改、要能快速回滾</td><td>兩版程式並存一段時間，之後要清理</td></tr>
+<tr><td>同一個 pipeline 一起切 revision</td><td>要求完全同時（例如 Container Apps 先部署新 revision 不導流，再同時切流量）</td><td>pipeline 較複雜，兩個 app 的發佈綁在一起</td></tr>
+</tbody></table></div>
+
+<h3>6.5 <code>deploy:affected</code> 實際結果</h3>
+<p>Task 13 實際執行 <code>node scripts/deploy-affected.mjs --dry-run</code>（每個改動之後都用 <code>git checkout --</code> 還原）：</p>
+<div class="tw wide"><table>
+<thead><tr><th>改動</th><th>Turborepo 判定受影響的套件</th><th>要部署的服務</th></tr></thead>
+<tbody>
+<tr><td>無改動</td><td>（無）</td><td>不需要部署任何服務</td></tr>
+<tr><td><code>apps/invoice/src/data/invoices.ts</code></td><td><code>@repo/invoice</code></td><td>invoice</td></tr>
+<tr><td><code>packages/menu/src/zones.ts</code></td><td><code>@repo/invoice</code>、<code>@repo/menu</code>、<code>@repo/order</code>、<code>@repo/zone-inspector</code></td><td>order、invoice</td></tr>
+<tr><td><code>packages/menu-runtime/src/styles.css</code></td><td><code>@repo/config-server</code>、<code>@repo/menu-runtime</code></td><td>config-server</td></tr>
+<tr><td><code>deploy/menu.json</code></td><td><code>@repo/deploy</code></td><td>不需要部署任何服務</td></tr>
+<tr><td>根目錄的檔案（spec、<code>README.md</code>）</td><td>（無）</td><td>不需要部署任何服務</td></tr>
+</tbody></table></div>
+<ul>
+  <li><code>deploy/</code> 與 <code>e2e/</code> 都是 workspace 套件（<code>@repo/deploy</code>、<code>@repo/e2e</code>），改動會歸給它們自己，不會讓 app 被判定受影響。</li>
+  <li><code>@repo/config-server</code> 把 <code>@repo/menu-runtime</code> 列為 dependency，order、invoice 不依賴它，所以改 runtime Menu 只部署 config-server。</li>
+  <li><code>turbo ls --affected</code> <b>包含未 commit 的改動</b>；輸出 JSON 前有一行 <code>• turbo 2.11.13</code>，腳本從第一個 <code>{</code> 開始解析。</li>
+</ul>
+</section>
+
+<!-- 7 -->
+<section id="deploy">
+<h2>7. 部署</h2>
+<div class="lead"><b>結論：</b>每個服務一個 Docker image，用 <code>turbo prune</code> 只帶需要的套件、Next 用 standalone 輸出。正式環境對應到 Azure Container Apps + ACR、Blob + Front Door / CDN、Key Vault。CI 用 path filter 讓每個 workflow 只在相關檔案改動時執行。</div>
+
+<h3>7.1 Docker</h3>
+<ul>
+  <li><b>三個 image</b>：<code>apps/order/Dockerfile</code>、<code>apps/invoice/Dockerfile</code>、<code>services/config-server/Dockerfile</code>，都在 repo 根目錄 build。</li>
+  <li><b>階段</b>：<code>turbo prune @repo/&lt;app&gt; --docker</code> → 先複製 <code>package.json</code> 與 lockfile 跑 <code>pnpm install --frozen-lockfile</code>（吃 layer cache）→ 複製原始碼、<code>turbo run build --filter=@repo/&lt;app&gt;</code> → runner 只複製 <code>.next/standalone</code>、<code>.next/static</code>、<code>public</code>，以非 root 的 <code>node</code> 使用者執行。</li>
+  <li><b>config-server</b>：build 階段先 build <code>@repo/menu-runtime</code>，JS 打包進 image；<code>menu.json</code> 則以 volume <code>./deploy:/config:ro</code> 掛入。掛整個資料夾而不是單一檔案，因為編輯器「寫新檔再改名」的存檔方式會讓單檔掛載失效。</li>
+  <li><b>compose</b>：order <code>8080:3000</code> 是唯一入口；invoice 只 <code>expose: ["3001"]</code>；config-server <code>8090:4000</code> 模擬另一個網域的 CDN。</li>
+</ul>
+
+<h3>7.2 Azure 對應</h3>
+<p>摘自 <code>deploy/azure/README.md</code>（說明與範例，未實際部署）：</p>
+<div class="tw mid"><table>
+<thead><tr><th>demo</th><th>Azure</th></tr></thead>
+<tbody>
+<tr><td>order、invoice 容器</td><td>兩個 Azure Container Apps（同一個 Container Apps Environment），image 放 Azure Container Registry</td></tr>
+<tr><td>config-server</td><td>Azure Blob Storage（<code>menu.json</code>、<code>assets/menu-runtime.js</code>），前面加 Front Door 或 CDN</td></tr>
+<tr><td><code>AUTH_SECRET</code>、<code>REVALIDATE_TOKEN</code></td><td>Key Vault，以 secret reference 注入 Container Apps</td></tr>
+<tr><td>order rewrites</td><td>維持 rewrites（invoice 只開內部 ingress）；或改用 Front Door 依路徑分流：<code>/invoices/*</code>、<code>/invoices-static/*</code> → invoice，<code>/*</code> → order</td></tr>
+<tr><td>Front Door 快取規則</td><td><code>/_next/static/*</code>、<code>/invoices-static/_next/static/*</code> 長快取；HTML 與 RSC 請求（<code>RSC</code> header 或 <code>_rsc</code> query）不快取</td></tr>
+</tbody></table></div>
+
+<h3>7.3 CI 範例的 path filter</h3>
+<p><code>.github/workflows/</code> 下四個範例（檔案開頭註明「範例，未實際執行」）：</p>
+<div class="tw wide"><table>
+<thead><tr><th>workflow</th><th>觸發的 paths</th><th>動作</th></tr></thead>
+<tbody>
+<tr><td><code>order.yml</code></td><td><code>apps/order/**</code>、<code>packages/**</code>、排除 <code>packages/menu-runtime/**</code>、<code>pnpm-lock.yaml</code></td><td>build image（帶 <code>INVOICE_ZONE_URL</code> build arg）→ push ACR → <code>az containerapp update</code></td></tr>
+<tr><td><code>invoice.yml</code></td><td>同上，換成 <code>apps/invoice/**</code></td><td>同上</td></tr>
+<tr><td><code>menu-config.yml</code></td><td><code>deploy/menu.json</code></td><td>驗證 JSON → 上傳 Blob → 呼叫兩個 revalidate API；不 build 任何 app</td></tr>
+<tr><td><code>menu-runtime.yml</code></td><td><code>packages/menu-runtime/**</code></td><td>build <code>menu-runtime.js</code> → 上傳 Blob</td></tr>
+</tbody></table></div>
+<p class="small">path filter 是 <code>--affected</code> 的簡化版：<code>packages/**</code> 一律觸發兩個 app，比 Turborepo 的依賴圖保守，但不需要 git 歷史比對。</p>
+
+<h3>7.4 <code>NEXT_PUBLIC_*</code> 在 build 時寫死</h3>
+<div class="callout bad"><p><code>NEXT_PUBLIC_*</code> 會在 build 時被內嵌進 client bundle。同一個 image 部署到不同環境時，瀏覽器拿到的仍是 build 當下的值。</p></div>
+<p>本 demo 的做法：runtime Menu 的網址用一般環境變數 <code>MENU_RUNTIME_URL</code>，由 layout 在 server 端讀取，再當 prop 傳給 client component <code>RuntimeMenuHost</code>。同一個 image 換環境只要改 runtime env。真正必須在 build 時決定的只有 <code>INVOICE_ZONE_URL</code>（rewrites）與 <code>BUILD_STANDALONE</code>。</p>
+
+<h3>7.5 多個 replica 的快取</h3>
+<ul>
+  <li>Menu 的 data cache 存在每個容器自己的檔案系統，revalidate API 只會清到收到請求的那一個 replica。</li>
+  <li>需要全部 replica 立即一致：改用共享的 <code>cacheHandler</code>（例如 Azure Cache for Redis）。否則接受最多 60 秒的延遲。</li>
+  <li>若之後使用 Server Actions，要設定固定的 <code>NEXT_SERVER_ACTIONS_ENCRYPTION_KEY</code>（本 demo 沒有使用）。</li>
+</ul>
+</section>
+
+<!-- 8 -->
+<section id="limits">
+<h2>8. 已知限制與風險</h2>
+<div class="lead"><b>結論：</b>最大的結構性限制是跨 zone 整頁載入，這是選 Multi-Zones 時就接受的代價。其餘多為 demo 範圍內刻意不處理、正式上線前要補的項目。</div>
+<h3>8.1 設計上接受的限制</h3>
+<div class="tw wide"><table>
+<thead><tr><th>限制</th><th>影響</th><th>緩解</th></tr></thead>
+<tbody>
+<tr><td>跨 zone 導頁為整頁載入</td><td>order ↔ invoice 切換時重新載入 JS、React 狀態不保留</td><td>Multi-Zones 本質；共用 Menu 與設計系統讓畫面看起來連續</td></tr>
+<tr><td>共用套件改動需部署兩個 app</td><td>部署期間兩邊可能短暫不一致</td><td>6.3 feature flag、6.4 同時切 revision</td></tr>
+<tr><td>order 的 rewrites 目標在 build 時固定</td><td>invoice 換網址要重新 build order</td><td>正式環境改用 Front Door 分流</td></tr>
+<tr><td>invoice 內 soft navigation 遇到 session 過期</td><td>middleware 的跨 zone redirect（到 order 的 <code>/login</code>）在 client router 中可能無法順利整頁跳轉</td><td>demo 用 8 小時有效期避開；正式環境需另外處理（例如 client 端偵測到未登入時改用 <code>location.assign</code>，未實作）</td></tr>
+<tr><td>Runtime Menu</td><td>無 SSR、佔位到出現有延遲（實測中位數 124 ms vs 55 ms）、多一份 React（gzip 76 KB）</td><td>只當對照組，預設用 build-time Menu</td></tr>
+<tr><td>根目錄的檔案不屬於任何套件</td><td>改根目錄的 <code>README.md</code>、<code>docs/</code> 時 <code>--affected</code> 判定為「無」，不會觸發部署（Task 13 實測）</td><td>新增會影響 build 的根目錄檔案時，要確認 <code>--affected</code> 與 CI path filter 有涵蓋（例如列入 <code>turbo.json</code> 的 <code>globalDependencies</code>；CI 範例已列 <code>pnpm-lock.yaml</code>）</td></tr>
+</tbody></table></div>
+
+<h3>8.2 正式上線前要補的項目</h3>
+<ul>
+  <li><code>publicUrl()</code> 沒有驗證 <code>x-forwarded-host</code> / <code>x-forwarded-proto</code> 的格式，格式錯誤會 500；正式環境應只信任來自自家 proxy 的值。</li>
+  <li>Menu 的 <code>href</code> 檢查沒有擋控制字元（例如 <code>/\t/evil.com</code>，瀏覽器去掉 tab 後成為 <code>//evil.com</code>）；<code>menu.json</code> 可遠端修改，應補上。</li>
+  <li>revalidate token 不是 timing-safe 比對。</li>
+  <li><code>/api/login</code> 收到非 form 的 content-type 時回 500 而不是 400。</li>
+  <li><code>AUTH_SECRET</code> 未設定時 middleware 會直接失敗（fail-fast），部署時必須注入。</li>
+  <li><code>RuntimeMenuHost</code> 在 script 載入成功但沒有註冊元件時會一直停在載入中（沒有 timeout）；runtime Menu 不渲染子選單。</li>
+  <li><code>deploy-affected</code> 的 <code>--dry-run</code> 判斷不驗證其他參數，打錯字會真的部署。</li>
+</ul>
+
+<h3>8.3 驗證時觀察到：長時間執行的容器中 revalidate 失效</h3>
+<div class="callout note">
+<p><b>觀察到的現象</b>：本次驗證第一次跑 <code>pnpm e2e:docker</code> 時，3 個依賴 <code>revalidateTag('menu')</code> 的測試失敗。revalidate API 回 200（<code>{"revalidated":true}</code>），config-server 也已提供新內容，但頁面仍是舊 Menu，要等 60 秒的時間型過期才更新。執行 <code>docker compose restart order invoice</code> 後，手動連續做兩次「改 <code>menu.json</code> → revalidate」都立即生效，重跑 E2E 15 項全部通過。</p>
+<p><b>讀 Next 15.5.28 原始碼確認的事實</b>：</p>
+<ul>
+  <li><code>incremental-cache/file-system-cache.js</code> 的 <code>revalidateTag</code> 只在 <code>tagsManifest</code> 還沒有這個 tag 時才寫入 <code>Date.now()</code>（<code>if (!tagsManifest.has(tag))</code>）。只看這一段，同一個 process 裡第二次以後的 revalidate 不會更新時間。</li>
+  <li>但 <code>revalidation-utils.js</code> 的 <code>revalidateTags</code> 也會呼叫每個已註冊 cache handler 的 <code>expireTags</code>。本專案 build 出來的設定是 <code>experimental.cacheHandlers: {}</code>，因此啟動時會註冊預設 handler（<code>cache-handlers/default.external.js</code>）。它的 <code>expireTags</code> 每次都會覆寫同一個 <code>tagsManifest</code>，值是 <code>Math.round(performance.timeOrigin + performance.now())</code>。</li>
+  <li>fetch 快取讀取時用 <code>isStale</code>（<code>tags-manifest.external.js</code>）判斷：tag 的時間 ≥ 快取項目的 <code>lastModified</code>（快取檔的 mtime）才視為失效。</li>
+</ul>
+<p>依上述程式碼，重複 revalidate 不會因為 <code>!has(tag)</code> 而失效，這和重啟後連續兩次都生效的結果一致。可能原因是 <code>performance.timeOrigin + performance.now()</code> 落後於檔案 mtime 使用的牆上時鐘：容器啟動後主機曾睡眠喚醒（macOS 電源紀錄 10:32:59 UTC），可能造成這個落差。但當時沒有量到這兩個時鐘的差距，所以這只是<b>未證實</b>的假設。</p>
+<p><b>結論：原因未查明。</b></p>
+<p>實務上的處理：60 秒的時間型更新不受影響；重啟 app 容器即恢復。正式環境若遇到，可改用共享 <code>cacheHandler</code>（7.5），或在 revalidate 後檢查 Menu 是否真的更新。</p>
+</div>
+</section>
+
+<!-- 9 -->
+<section id="verify">
+<h2>9. 驗證結果</h2>
+<div class="lead"><b>結論：</b>2026-11-22 全部驗證通過：單元測試 101 項、typecheck 7 個任務、Docker 檢查 4 項、Docker E2E 15 項、本機 dev E2E 13 項（2 項僅限 Docker 而略過）。</div>
+<div class="tw wide"><table>
+<thead><tr><th>指令</th><th>結果</th><th>備註</th></tr></thead>
+<tbody>
+<tr><td><code>pnpm test</code></td><td class="y">6 個套件、16 個測試檔、101 項全數通過</td><td>menu 44、auth 30、config-server 11、menu-runtime 8、ui 5、zone-inspector 3</td></tr>
+<tr><td><code>vitest run scripts/affected-services.test.mjs</code></td><td class="y">5 項通過</td><td><code>deploy:affected</code> 的判斷邏輯（不在 <code>pnpm test</code> 內）</td></tr>
+<tr><td><code>pnpm typecheck</code></td><td class="y">7 個任務成功</td><td></td></tr>
+<tr><td><code>pnpm docker:check</code></td><td class="y">4 / 4</td><td>order 首頁 200；未登入進 <code>/invoices</code> 307 到 8080 的登入頁（不是內網位址）；invoice 3001 不對外；config-server health 與 runtime menu（帶 CORS）</td></tr>
+<tr><td><code>pnpm e2e:docker</code></td><td class="y">15 passed</td><td>第一次 12 passed / 3 failed（見 8.3），重啟 order、invoice 容器後 15 / 15，耗時 9.5 秒</td></tr>
+<tr><td><code>pnpm e2e</code>（本機 dev）</td><td class="y">13 passed、2 skipped</td><td>略過的是 config-server 故障測試（需要停掉容器，只在 Docker 執行）</td></tr>
+<tr><td><code>pnpm measure</code></td><td class="y">1 passed</td><td>Build-time 55 ms、Runtime 124 ms（中位數）；bundle gzip 77,794 bytes；見第 5 章</td></tr>
+</tbody></table></div>
+<p>E2E 涵蓋：同 zone soft navigation（次數增加、載入時間不變、window 記號保留）、跨 zone 整頁載入、未登入導到登入頁後回到原發票、跨 zone 共用登入與登出、<code>next</code> 參數不能導到外站、改 <code>menu.json</code> + revalidate 兩個 zone 同時更新、<code>menuV2</code> flag 兩邊同時切換、runtime Menu 的 soft / 整頁導頁、runtime Menu 沒有 SSR、config-server 故障時的備援與錯誤提示、invoice 靜態資源以 <code>/invoices-static/</code> 開頭且由 invoice 回應。</p>
+</section>
+
+<footer>
+  版本：Next 15.5.28、React 19.3.1（App Router 實際執行內建的 19.2.0-canary-0bdb9206-20250818）、TypeScript 5.9.3、Tailwind CSS 4.3.5、pnpm 10.34.9、Turborepo 2.11.13、Node 20.20.2。規格：<code>docs/superpowers/specs/2026-11-22-order-invoice-design.md</code>。
+</footer>
+</main>
+</div>
+</body>
+</html>

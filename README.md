@@ -29,7 +29,7 @@ pnpm dev         # order:3000、invoice:3001、config-server:4000、menu-runtime
 
 ## 改 Menu 內容（不用部署）
 
-編輯 `deploy/menu.json`，最多 60 秒後兩個 app 自動更新。要立即生效：
+編輯 `deploy/menu.json`。Menu 的 data cache 為 60 秒，過期後的下一次請求會先拿到舊內容，同時在背景重新抓取（stale-while-revalidate），之後的請求才會看到新內容。要立即生效，呼叫 revalidate API：
 
 ```bash
 curl -X POST -H "Authorization: Bearer demo-only-revalidate-token" http://localhost:3000/api/revalidate-menu
@@ -53,12 +53,37 @@ pnpm docker:down
 
 `deploy/` 以 volume 掛進 config-server，改 `deploy/menu.json` 不用重啟任何容器。
 
+## 只部署有改動的服務
+
+```bash
+pnpm deploy:affected --dry-run   # 只列出會部署哪些服務
+pnpm deploy:affected             # 對受影響的服務執行 docker compose up -d --build
+```
+
+`--affected` 比對的是 `main...HEAD` 加上尚未 commit 的改動，所以在 main 上 commit 之後就看不到差異了。示範方式三選一：
+
+- 改完不 commit，直接跑 `pnpm deploy:affected --dry-run`。
+- 在分支上工作，再跑 `pnpm deploy:affected --dry-run`。
+- 已經在 main 上 commit：`TURBO_SCM_BASE=HEAD~1 pnpm deploy:affected --dry-run`（改成比對上一個 commit）。
+
+| 改了什麼 | 部署 |
+|---|---|
+| `apps/order/**` | order |
+| `apps/invoice/**` | invoice |
+| `packages/ui`、`menu`、`auth`、`zone-inspector` | order、invoice |
+| `packages/menu-runtime/**` | config-server |
+| `packages/tsconfig/**` | order、invoice、config-server（全部） |
+| `deploy/menu.json` | 不部署（volume 直接生效） |
+
 ## 測試
 
 ```bash
-pnpm test        # 單元測試（Vitest）
+pnpm test          # 單元測試（Vitest）
+pnpm test:scripts  # deploy:affected 對照邏輯的單元測試
 pnpm typecheck
-pnpm e2e         # E2E（需先 pnpm dev）
+pnpm --filter @repo/e2e exec playwright install chromium   # 新機器第一次要先裝瀏覽器
+pnpm e2e           # E2E（需先 pnpm dev）
+pnpm measure       # Menu 載入量測（需先 pnpm docker:up），結果寫到 e2e/results/menu-metrics.json
 ```
 
 `.env.example` 與 `docker-compose.yml` 裡的 secret 只供 demo，不得用於正式環境。

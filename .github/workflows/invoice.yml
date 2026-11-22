@@ -1,0 +1,27 @@
+# 範例：未實際執行。需要的 secrets：AZURE_CREDENTIALS；vars：ACR_NAME、RESOURCE_GROUP
+name: deploy-invoice
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/invoice/**
+      - packages/**
+      - '!packages/menu-runtime/**'
+      - pnpm-lock.yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Build and push image
+        run: |
+          az acr login -n ${{ vars.ACR_NAME }}
+          docker build -f apps/invoice/Dockerfile -t ${{ vars.ACR_NAME }}.azurecr.io/invoice:${{ github.sha }} .
+          docker push ${{ vars.ACR_NAME }}.azurecr.io/invoice:${{ github.sha }}
+      - name: Deploy to Container Apps
+        run: |
+          az containerapp update -n invoice -g ${{ vars.RESOURCE_GROUP }} \
+            --image ${{ vars.ACR_NAME }}.azurecr.io/invoice:${{ github.sha }}
