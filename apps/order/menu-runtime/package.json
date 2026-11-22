@@ -1,0 +1,5 @@
+{
+  "//": "只讓 menu-runtime/ 底下的 vite / vitest 設定以 ESM 載入；不是 workspace 套件",
+  "private": true,
+  "type": "module"
+}

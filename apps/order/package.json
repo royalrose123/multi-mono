@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build",
+    "build": "vite build -c menu-runtime/vite.config.ts && next build",
     "start": "next start -p 3000",
-    "typecheck": "tsc --noEmit"
+    "menu-runtime:watch": "vite build -c menu-runtime/vite.config.ts --watch",
+    "test": "vitest run -c menu-runtime/vitest.config.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p menu-runtime"
   },
   "dependencies": {
     "@repo/auth": "workspace:*",
@@ -20,6 +22,9 @@
   "devDependencies": {
     "@repo/tsconfig": "workspace:*",
     "@tailwindcss/postcss": "4.3.5",
-    "tailwindcss": "4.3.5"
+    "@vitejs/plugin-react": "6.3.0",
+    "tailwindcss": "4.3.5",
+    "vite": "8.3.8",
+    "vitest": "4.1.12"
   }
 }

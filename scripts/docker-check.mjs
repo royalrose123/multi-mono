@@ -30,11 +30,18 @@ check('invoice 的 3001 不對外', async () => {
   })
 })
 
-check('config-server health 與 runtime menu（帶 CORS）', async () => {
-  assert((await fetch('http://localhost:8090/health')).status === 200, 'health')
-  const res = await fetch('http://localhost:8090/assets/menu-runtime.js')
-  assert(res.status === 200, `runtime status ${res.status}`)
-  assert(res.headers.get('access-control-allow-origin') === '*', 'CORS header')
+check('order 的 /api/menu 200（JSON、不快取）', async () => {
+  const res = await fetch('http://localhost:8080/api/menu')
+  assert(res.status === 200, `status ${res.status}`)
+  assert(res.headers.get('cache-control') === 'no-store', `cache-control ${res.headers.get('cache-control')}`)
+  const body = await res.json()
+  assert(Array.isArray(body.items) && body.items.length > 0, 'items')
+})
+
+check('order 提供 runtime Menu 的 JS', async () => {
+  const res = await fetch('http://localhost:8080/menu-runtime/menu-runtime.js')
+  assert(res.status === 200, `status ${res.status}`)
+  assert((res.headers.get('content-type') ?? '').includes('javascript'), `content-type ${res.headers.get('content-type')}`)
 })
 
 let failed = 0

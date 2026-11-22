@@ -10,3 +10,6 @@ e2e/playwright-report
 e2e/results
 .DS_Store
 .superpowers
+
+# order 的 build 產物（Vite 打包的 runtime Menu）
+apps/order/public/menu-runtime

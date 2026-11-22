@@ -21,7 +21,9 @@ ARG INVOICE_ZONE_URL
 RUN test -n "$INVOICE_ZONE_URL" || (echo "需要 build arg INVOICE_ZONE_URL（rewrites 在 build 時寫死）" && exit 1)
 ENV INVOICE_ZONE_URL=$INVOICE_ZONE_URL
 ENV BUILD_STANDALONE=1
+# order 的 build 會先用 Vite 打包 runtime Menu 到 public/menu-runtime/，再 next build
 RUN turbo run build --filter=@repo/order
+RUN test -f apps/order/public/menu-runtime/menu-runtime.js || (echo "缺少 runtime Menu 的打包結果" && exit 1)
 
 # 3) 執行階段只保留 standalone 產物
 FROM node:20.20.2-alpine AS runner
@@ -29,6 +31,7 @@ WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
 COPY --from=builder --chown=node:node /app/apps/order/.next/standalone ./
 COPY --from=builder --chown=node:node /app/apps/order/.next/static ./apps/order/.next/static
+# public/ 含 Vite 打包的 menu-runtime/menu-runtime.js
 COPY --from=builder --chown=node:node /app/apps/order/public ./apps/order/public
 USER node
 EXPOSE 3000

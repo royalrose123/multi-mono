@@ -26,11 +26,11 @@ export async function windowMark(page: Page) {
   return page.evaluate(() => (window as unknown as { __e2eMark?: number }).__e2eMark ?? null)
 }
 
+/** 只有 invoice 有 menu 快取（order 每次請求都讀檔），所以只清 invoice。 */
 export async function revalidateMenus(request: APIRequestContext) {
-  for (const p of ['/api/revalidate-menu', '/invoices/api/revalidate-menu']) {
-    const res = await request.post(p, { headers: { Authorization: `Bearer ${TOKEN}` } })
-    expect(res.status(), p).toBe(200)
-  }
+  const p = '/invoices/api/revalidate-menu'
+  const res = await request.post(p, { headers: { Authorization: `Bearer ${TOKEN}` } })
+  expect(res.status(), p).toBe(200)
 }
 
 export function readMenuFile(): string {

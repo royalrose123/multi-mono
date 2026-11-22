@@ -1,4 +1,4 @@
-// 刻意不 import @repo/menu：runtime Menu 是獨立打包、獨立部署的產物。
+// 刻意不 import @repo/menu：runtime Menu 是獨立打包的產物（Vite），只透過 /api/menu 拿資料。
 export type RuntimeItem = { label: string; href: string; children?: RuntimeItem[] }
 
 function isInternal(href: unknown): href is string {

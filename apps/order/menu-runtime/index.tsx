@@ -5,8 +5,8 @@ import css from './styles.css?inline'
 type Zone = 'order' | 'invoice'
 type HostProps = Omit<RuntimeMenuProps, 'menuUrl'> & { currentZone?: Zone }
 
-// menu.json 與本檔案放在同一個 CDN：/assets/menu-runtime.js → /menu.json
-const MENU_URL = new URL(/* @vite-ignore */ '../menu.json', import.meta.url).toString()
+// 本檔案由 order 提供（/menu-runtime/menu-runtime.js），menu 資料讀同網域 order 的 /api/menu
+const MENU_URL = new URL(/* @vite-ignore */ '/api/menu', import.meta.url).toString()
 
 class RuntimeSiteMenuElement extends HTMLElement {
   #root: Root | null = null

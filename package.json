@@ -5,7 +5,7 @@
   "engines": { "node": ">=20.9.0" },
   "scripts": {
     "bootstrap": "node scripts/bootstrap.mjs",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev menu-runtime:watch",
     "build": "turbo run build",
     "test": "turbo run test",
     "test:scripts": "vitest run scripts",
@@ -14,7 +14,7 @@
     "e2e:docker": "pnpm --filter @repo/e2e run e2e:docker",
     "measure": "pnpm --filter @repo/e2e run measure",
     "docker:up": "docker compose up --build -d",
-    "docker:down": "docker compose down",
+    "docker:down": "docker compose down --remove-orphans",
     "docker:check": "node scripts/docker-check.mjs",
     "deploy:affected": "node scripts/deploy-affected.mjs"
   },

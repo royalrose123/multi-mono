@@ -1,5 +1,6 @@
-# 範例：未實際執行。改 menu.json 只上傳 Blob 並清除兩個 app 的快取，不 build、不部署任何 app。
-# 需要的 secrets：AZURE_CREDENTIALS、REVALIDATE_TOKEN；vars：STORAGE_ACCOUNT、SITE_URL
+# 範例：未實際執行。改 menu.json 只上傳到掛進 order 的 Azure Files share，再清除 invoice 的快取；不 build、不部署任何 app。
+# order 每次請求都讀檔，上傳後立即生效；invoice 快取 60 秒，呼叫 revalidate API 讓它立即更新。
+# 需要的 secrets：AZURE_CREDENTIALS、REVALIDATE_TOKEN；vars：STORAGE_ACCOUNT、FILE_SHARE、SITE_URL
 name: publish-menu-config
 on:
   push:
@@ -15,13 +16,10 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Validate JSON
         run: node -e "JSON.parse(require('fs').readFileSync('deploy/menu.json','utf8'))"
-      - name: Upload to Blob
+      - name: Upload to Azure Files（order 的 volume）
         run: |
-          az storage blob upload --account-name ${{ vars.STORAGE_ACCOUNT }} --auth-mode login \
-            -c config -n menu.json -f deploy/menu.json --overwrite \
-            --content-type application/json --content-cache-control no-store
-      - name: Revalidate both zones
+          az storage file upload --account-name ${{ vars.STORAGE_ACCOUNT }} --auth-mode login --enable-file-backup-request-intent \
+            --share-name ${{ vars.FILE_SHARE }} --source deploy/menu.json --path menu.json
+      - name: Revalidate invoice
         run: |
-          for path in /api/revalidate-menu /invoices/api/revalidate-menu; do
-            curl -fsS -X POST -H "Authorization: Bearer ${{ secrets.REVALIDATE_TOKEN }}" "${{ vars.SITE_URL }}$path"
-          done
+          curl -fsS -X POST -H "Authorization: Bearer ${{ secrets.REVALIDATE_TOKEN }}" "${{ vars.SITE_URL }}/invoices/api/revalidate-menu"

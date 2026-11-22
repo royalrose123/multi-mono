@@ -6,9 +6,10 @@
     "build": {
       "dependsOn": ["^build"],
       "env": ["INVOICE_ZONE_URL", "BUILD_STANDALONE"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "public/menu-runtime/**"]
     },
     "dev": { "cache": false, "persistent": true },
+    "menu-runtime:watch": { "cache": false, "persistent": true },
     "test": { "outputs": [] },
     "typecheck": { "outputs": [] }
   }

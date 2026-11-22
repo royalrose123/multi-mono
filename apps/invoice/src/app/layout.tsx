@@ -1,5 +1,5 @@
 import { getCurrentUser } from '@repo/auth/server'
-import { MENU_MODE_COOKIE, parseMenuMode, RuntimeMenuHost, SiteMenu } from '@repo/menu'
+import { MENU_MODE_COOKIE, parseMenuMode, RUNTIME_MENU_SRC, RuntimeMenuHost, SiteMenu } from '@repo/menu'
 import { getMenu } from '@repo/menu/server'
 import { ZoneInspector } from '@repo/zone-inspector'
 import type { Metadata } from 'next'
@@ -12,6 +12,7 @@ export const metadata: Metadata = { title: 'Invoice｜Order × Invoice Demo' }
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const [user, cookieStore] = await Promise.all([getCurrentUser(), cookies()])
   const menuMode = parseMenuMode(cookieStore.get(MENU_MODE_COOKIE)?.value)
+  // invoice 向 order 的 /api/menu 取得（MENU_CONFIG_URL，快取 60 秒）
   const menu = menuMode === 'build' ? await getMenu() : null
 
   return (
@@ -21,7 +22,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           {menu ? (
             <SiteMenu menu={menu} currentZone="invoice" user={user} />
           ) : (
-            <RuntimeMenuHost runtimeUrl={process.env.MENU_RUNTIME_URL ?? ''} currentZone="invoice" user={user} />
+            <RuntimeMenuHost runtimeUrl={RUNTIME_MENU_SRC} currentZone="invoice" user={user} />
           )}
         </header>
         <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>

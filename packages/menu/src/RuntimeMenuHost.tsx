@@ -16,7 +16,7 @@ export type RuntimeMenuElement = HTMLElement & {
 type Status = 'loading' | 'ready' | 'error'
 
 /**
- * 在瀏覽器端從 CDN 載入 runtime Menu（Web Component），並把 host 的狀態傳給它。
+ * 在瀏覽器端載入 order 提供的 runtime Menu（Web Component），並把 host 的狀態傳給它。
  * 這是對照組：沒有 SSR，載入前只顯示佔位框。
  */
 export function RuntimeMenuHost({ runtimeUrl, currentZone, user }: { runtimeUrl: string; currentZone: Zone; user: MenuUser }) {
@@ -63,7 +63,7 @@ export function RuntimeMenuHost({ runtimeUrl, currentZone, user }: { runtimeUrl:
       {status === 'loading' ? <div aria-label="選單載入中" className="h-14 animate-pulse border-b border-slate-200 bg-slate-100" /> : null}
       {status === 'error' ? (
         <div role="alert" className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          選單載入失敗：無法從 CDN 取得 runtime menu
+          選單載入失敗：無法取得 runtime menu
         </div>
       ) : null}
       <div ref={containerRef} />

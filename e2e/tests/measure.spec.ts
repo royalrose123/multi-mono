@@ -30,7 +30,7 @@ test('@measure build-time vs runtime Menu', async ({ browser, baseURL, request }
     result[mode] = { menuVisibleMsMedian: median(times), menuVisibleMs: times, menuInHtml: html.includes('data-menu="build"') }
   }
 
-  const bundle = readFileSync(path.join(ROOT, 'packages/menu-runtime/dist/menu-runtime.js'))
+  const bundle = readFileSync(path.join(ROOT, 'apps/order/public/menu-runtime/menu-runtime.js'))
   result.runtimeBundle = { bytes: bundle.length, gzipBytes: gzipSync(bundle).length }
 
   mkdirSync(path.join(ROOT, 'e2e/results'), { recursive: true })

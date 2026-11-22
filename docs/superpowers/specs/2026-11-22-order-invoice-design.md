@@ -1,6 +1,7 @@
 # Order × Invoice Multi-Zones Demo — 設計規格
 
 > 日期：2026-11-22
+> 2026-11-22 修訂：menu 資料與 runtime menu 改由 order 提供，拿掉 config-server（理由與取捨見 tech review）
 > 狀態：設計已逐段確認，待使用者檢查本文件
 > 標示「**合約**」的值（port、路徑、環境變數、cookie 名稱、套件名稱、版本）在實作時不得自行更改；有疑慮先停下來確認。
 

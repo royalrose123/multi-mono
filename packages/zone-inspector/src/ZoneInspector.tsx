@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useNavigationTracker } from './useNavigationTracker'
 
 const zoneLabel: Record<Zone, string> = { order: 'order（主網站）', invoice: 'invoice' }
-const sourceLabel = { remote: 'build-time（遠端 menu.json）', fallback: 'build-time（備援資料）', runtime: 'runtime（CDN 載入）' } as const
+const sourceLabel = { remote: 'build-time（menu.json）', fallback: 'build-time（備援資料）', runtime: 'runtime（瀏覽器載入）' } as const
 
 function formatTime(ms: number | null): string {
   if (ms === null) return '—'

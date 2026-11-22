@@ -2,8 +2,6 @@
 name: order-invoice
 
 x-app-env: &app-env
-  MENU_CONFIG_URL: http://config-server:4000/menu.json
-  MENU_RUNTIME_URL: http://localhost:8090/assets/menu-runtime.js
   AUTH_SECRET: demo-only-auth-secret-change-me-0123456789
   REVALIDATE_TOKEN: demo-only-revalidate-token
 
@@ -15,20 +13,20 @@ services:
       args:
         INVOICE_ZONE_URL: http://invoice:3001
     ports: ["8080:3000"]
-    environment: *app-env
-    depends_on: [invoice, config-server]
+    environment:
+      <<: *app-env
+      MENU_FILE: /config/menu.json
+    # order 每次請求都讀 menu.json：改 deploy/menu.json 立即生效，不用重啟。
+    # 掛整個資料夾而不是單一檔案：編輯器用「寫新檔再改名」存檔時，單檔掛載會失效
+    volumes: ["./deploy:/config:ro"]
+    depends_on: [invoice]
 
   invoice:
     build:
       context: .
       dockerfile: apps/invoice/Dockerfile
     expose: ["3001"]
-    environment: *app-env
-
-  config-server:
-    build:
-      context: .
-      dockerfile: services/config-server/Dockerfile
-    ports: ["8090:4000"]
-    # 掛整個資料夾而不是單一檔案：編輯器用「寫新檔再改名」存檔時，單檔掛載會失效
-    volumes: ["./deploy:/config:ro"]
+    environment:
+      <<: *app-env
+      # 經 compose 內網向 order 取得 menu（快取 60 秒）
+      MENU_CONFIG_URL: http://order:3000/api/menu
